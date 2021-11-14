@@ -17,6 +17,12 @@ main(int argc, char **argv)
   // the value of x by 1 using in-line assembly
   //
 
+	__asm__("add $1, %0\n\t"
+		: "=r" (x) 
+		: "r" (x));
+
+
+
   printf("Hello x = %d after increment\n", x);
 
   if(x == 2){
