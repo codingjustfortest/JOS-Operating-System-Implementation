@@ -80,7 +80,7 @@ mon_backtrace(int argc, char **argv, struct Trapframe *tf)
 		{
 			cprintf("%s:%d: %s+%016x  args:%d", information.rip_file, information.rip_line, information.rip_fn_name, rip-information.rip_fn_addr, information.rip_fn_narg);
 			if(j==1)
-				cprintf("  %016x", *(uint32_t *)(rbp));
+				cprintf("  %016x", *(uint32_t *)(rbp-4));
 			for(j=2;j<=information.rip_fn_narg;j++)
 			{
 				cprintf("  %016x", *(uint32_t *)(rbp+8));
