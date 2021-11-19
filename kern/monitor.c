@@ -70,9 +70,10 @@ mon_backtrace(int argc, char **argv, struct Trapframe *tf)
 	
 	while(rbp != 0)
 	{
-		cprintf("  rbp %016llx  rip %016llx\n", rbp, rip);
-		rip = *(uint64_t *)(rbp + 8);
+		cprintf("rbp %016llx  rip %016llx\n", rbp, rip);
 		rbp = *(uint64_t *)(rbp);
+
+		
 	}
 	return 0;
 }
