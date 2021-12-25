@@ -247,7 +247,7 @@ x64_vm_init(void)
 	//panic("i386_vm_init: This function is not finished\n");
 	//////////////////////////////////////////////////////////////////////
 	// create initial page directory.
-	panic("x64_vm_init: this function is not finished\n");
+	//panic("x64_vm_init: this function is not finished\n");
 	pml4e = boot_alloc(PGSIZE);
 	memset(pml4e, 0, PGSIZE);
 	boot_pml4e = pml4e;
@@ -352,15 +352,28 @@ page_init(void)
 	// is constructed
 	// NB: Remember to mark the memory used for initial boot page table i.e (va>=BOOT_PAGE_TABLE_START && va < BOOT_PAGE_TABLE_END) as in-use (not free)
 	size_t i;
-	struct PageInfo* last = NULL;
-	for (i = 0; i < npages; i++) {
-		pages[i].pp_ref = 0;
-		pages[i].pp_link = NULL;
-		if(last)
-			last->pp_link = &pages[i];
-		else
-			page_free_list = &pages[i];
-		last = &pages[i];
+	page_free_list = NULL;
+
+	//num_alloc：在extmem区域已经被占用的页的个数
+	int num_alloc = ((uint64_t)boot_alloc(0) - KERNBASE) / PGSIZE;
+	//num_iohole：在io hole区域占用的页数
+	int num_iohole = 96;
+
+	pages[0].pp_ref = 1;
+	for(i = 1; i < npages_basemem; i++)
+	{
+	  pages[i].pp_ref = 0;
+	  pages[i].pp_link = page_free_list;
+	  page_free_list = &pages[i];
+	}
+
+	for(i = npages_basemem; i < npages_basemem + num_iohole + num_alloc; i++)
+	  pages[i].pp_ref = 1;
+	for(; i < npages; i++)
+	{
+	  pages[i].pp_ref = 0;
+	  pages[i].pp_link = page_free_list;
+	  page_free_list = &pages[i];
 	}
 }
 
@@ -380,7 +393,15 @@ struct PageInfo *
 page_alloc(int alloc_flags)
 {
 	// Fill this function in
-	return 0;
+	if(!page_free_list)
+		return NULL;
+	struct PageInfo *pp = page_free_list;
+	if(alloc_flags & ALLOC_ZERO) {
+		memset(page2kva(pp), 0, PGSIZE);
+	}
+	page_free_list = pp->pp_link;
+	pp->pp_link = 0;
+	return pp;
 }
 
 //
@@ -403,6 +424,14 @@ page_free(struct PageInfo *pp)
 	// Fill this function in
 	// Hint: You may want to panic if pp->pp_ref is nonzero or
 	// pp->pp_link is not NULL.
+
+	if(pp->pp_ref != 0)
+		panic("pp->pp_ref is nonzero\n");
+	if(pp->pp_link)
+		panic("pp->pp_link is not NULL\n");
+
+	pp->pp_link = page_free_list;
+	page_free_list = pp;
 }
 
 //
