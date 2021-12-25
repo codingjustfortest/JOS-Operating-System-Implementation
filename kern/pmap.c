@@ -354,9 +354,7 @@ page_init(void)
 	size_t i;
 	page_free_list = NULL;
 
-	//num_alloc：在extmem区域已经被占用的页的个数
 	int num_alloc = ((uint64_t)boot_alloc(0) - KERNBASE) / PGSIZE;
-	//num_iohole：在io hole区域占用的页数
 	int num_iohole = 96;
 
 	pages[0].pp_ref = 1;
