@@ -508,8 +508,28 @@ pml4e_walk(pml4e_t *pml4e, const void *va, int create)
 // Hints are the same as in pml4e_walk
 pte_t *
 pdpe_walk(pdpe_t *pdpe,const void *va,int create){
+	pde_t *pde;
+		struct PageInfo *page = NULL;
+		pdpe_t *current_pdpe = &pdpe[PDPE(va)];
 
-	return NULL;
+		if(create && !*current_pdpe) {
+			page = page_alloc(ALLOC_ZERO);
+			if (!page)
+				return NULL;
+			page->pp_ref++;
+			*current_pdpe = (pdpe_t) (page2pa(page) & ~0xFFF) | PTE_P | PTE_W;
+		}
+
+		pde = (pde_t *) KADDR(PTE_ADDR(*current_pdpe));
+
+		pte_t *pte = pgdir_walk(pde, va, create);
+
+		if (!pte && page) {
+			page_decref(page);
+			*current_pdpe = 0x0;
+		}
+
+		return pte;
 }
 // Given 'pgdir', a pointer to a page directory, pgdir_walk returns
 // a pointer to the page table entry (PTE) in the final page table.
@@ -523,30 +543,24 @@ pte_t *
 pgdir_walk(pde_t *pgdir, const void *va, int create)
 {
 	// Fill this function in
+	pde_t *current_pde = &pgdir[PDX(va)];
+	pte_t *pte;
 
-	unsigned  int  page_off;
-	pte_t * page_base =  NULL;
-	struct  PageInfo* new_page =  NULL;
+	if(create && !*current_pde) {
+		struct PageInfo *page = page_alloc(ALLOC_ZERO);
+		if (!page)
+			return NULL;
 
- unsigned  int  dic_off =  PDX(va);
-	pde_t * dic_entry_ptr = pgdir +  dic_off;
-
-	if (!(*dic_entry_ptr &  PTE_P))
- {
-				if (create)
-				{
-							 new_page = page_alloc( 1 );
-							 if (new_page == NULL)  return  NULL;
-							 new_page->pp_ref++ ;
-							 *dic_entry_ptr = (page2pa(new_page) | PTE_P | PTE_W |  PTE_U);
-				}
-			 else
-					return  NULL;
+		page->pp_ref++;
+		*current_pde = (pde_t) (page2pa(page) & ~0xFFF) | PTE_P | PTE_W;
 	}
 
-	page_off =  PTX(va);
-	page_base = KADDR(PTE_ADDR(* dic_entry_ptr));
-	return  & page_base[page_off];
+	pte = (pte_t *) KADDR(PTE_ADDR(*current_pde));
+
+	if(!pte)
+		return NULL;
+
+	return &pte[PTX(va)];
 }
 
 //
@@ -563,6 +577,14 @@ static void
 boot_map_region(pml4e_t *pml4e, uintptr_t la, size_t size, physaddr_t pa, int perm)
 {
 	// Fill this function in
+	pte_t *pte;
+	int i;
+ 	for(i = 0; i < size; i += PGSIZE) {
+ 		pte = pml4e_walk(pml4e, (void *)la + i, true);
+ 		if (!pte)
+ 			panic("failed to find the physical memory");
+ 		*pte = (pa + i) | perm | PTE_P;
+ 	}
 }
 
 //
