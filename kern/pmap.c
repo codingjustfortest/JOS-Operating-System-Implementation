@@ -472,8 +472,33 @@ page_decref(struct PageInfo* pp)
 pte_t *
 pml4e_walk(pml4e_t *pml4e, const void *va, int create)
 {
-	
-return NULL;
+	pdpe_t *pdpe;
+ 	struct PageInfo *page = NULL;
+ 	pml4e_t *current_pml4e = &pml4e[PML4(va)];
+
+ 	if(create && !*current_pml4e) {
+ 		page = page_alloc(ALLOC_ZERO);
+ 		if (!page)
+			return NULL;
+
+		page->pp_ref++;
+
+
+		*current_pml4e = (pml4e_t) (page2pa(page) & ~0xFFF) | PTE_P | PTE_W | PTE_U;
+	}
+
+	pdpe = (pdpe_t *) KADDR(PTE_ADDR(*current_pml4e));
+
+	pte_t *pte = pdpe_walk(pdpe, va, create);
+
+	if (!pte && page) {
+
+		page_decref(page);
+
+		*current_pml4e = 0x0;
+	}
+
+	return pte;
 }
 
 
