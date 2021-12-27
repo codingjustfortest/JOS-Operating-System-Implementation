@@ -260,9 +260,9 @@ x64_vm_init(void)
 	// array.  'npages' is the number of physical pages in memory.
 	// Your code goes here:
 
-	n = npages * sizeof(struct PageInfo);
-	pages = (struct PageInfo *) boot_alloc(n);
-	memset(pages, 0, n);
+	n = ROUNDUP(npages * sizeof(struct PageInfo), PGSIZE);
+	pages = boot_alloc(n);
+	//memset(pages, 0, n);
 
 	//////////////////////////////////////////////////////////////////////
 	// Now that we've allocated the initial kernel data structures, we set
@@ -281,7 +281,9 @@ x64_vm_init(void)
 	//    - pages itself -- kernel RW, user NONE
 	// Your code goes here:
 	n = npages*sizeof(struct PageInfo);
-	boot_map_region(boot_pml4e, UPAGES, n, PADDR(pages), PTE_U);
+	boot_map_region(pml4e, UPAGES, n, PADDR(pages), PTE_U);
+
+	boot_map_region(pml4e, (uintptr_t) pages, PGSIZE, PADDR(pages), PTE_W);
 
 	//////////////////////////////////////////////////////////////////////
 	// Use the physical memory that 'bootstack' refers to as the kernel
@@ -295,6 +297,8 @@ x64_vm_init(void)
 	//     Permissions: kernel RW, user NONE
 	// Your code goes here:
 
+	boot_map_region(pml4e, KSTACKTOP-KSTKSIZE, 16*PGSIZE, PADDR(bootstack), PTE_W);
+
 	//////////////////////////////////////////////////////////////////////
 	// Map all of physical memory at KERNBASE. We have detected the number
 	// of physical pages to be npages.
@@ -302,6 +306,9 @@ x64_vm_init(void)
 	//      the PA range [0, npages*PGSIZE)
 	// Permissions: kernel RW, user NONE
 	// Your code goes here:
+
+	boot_map_region(pml4e, KERNBASE, npages * PGSIZE, (physaddr_t)0x0, PTE_W);
+	
 	// Check that the initial page directory has been set up correctly.
 	check_page_free_list(1);
 	check_page_alloc();
