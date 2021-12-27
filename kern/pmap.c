@@ -616,6 +616,15 @@ int
 page_insert(pml4e_t *pml4e, struct PageInfo *pp, void *va, int perm)
 {
 	// Fill this function in
+	pte_t *pte = pml4e_walk(pml4e, va, true);
+	if (!pte)
+		return -E_NO_MEM;
+	if (*pte & PTE_P)
+		page_remove(pml4e, va);
+
+	pp->pp_ref++;
+	*pte = (page2pa(pp) & ~0xFFF) | perm | PTE_P;
+
 	return 0;
 }
 
@@ -634,7 +643,16 @@ struct PageInfo *
 page_lookup(pml4e_t *pml4e, void *va, pte_t **pte_store)
 {
 	// Fill this function in
-	return NULL;
+	pte_t *pte = pml4e_walk(pml4e, va, true);
+	if (!pte)
+		return NULL;
+
+	physaddr_t pa = (physaddr_t) *pte;
+
+	if (pte_store)
+		*pte_store = pte;
+
+	return pa2page(pa);
 }
 
 //
@@ -656,6 +674,15 @@ void
 page_remove(pml4e_t *pml4e, void *va)
 {
 	// Fill this function in
+	pte_t *pte = NULL;
+	struct PageInfo *page = page_lookup(pml4e, va, &pte);
+	if (page) {
+		page_decref(page);
+		if (pte) {
+			*pte = 0;
+			tlb_invalidate(pml4e, va);
+		}
+	}
 }
 
 //
