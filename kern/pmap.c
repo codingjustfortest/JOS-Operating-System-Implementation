@@ -308,7 +308,7 @@ x64_vm_init(void)
 	// Your code goes here:
 
 	boot_map_region(pml4e, KERNBASE, npages * PGSIZE, (physaddr_t)0x0, PTE_W);
-	
+
 	// Check that the initial page directory has been set up correctly.
 	check_page_free_list(1);
 	check_page_alloc();
