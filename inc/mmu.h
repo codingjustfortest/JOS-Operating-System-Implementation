@@ -37,11 +37,7 @@
 #define VPDPE(la)   (((uintptr_t) (la)) >> PDPESHIFT)
 #define VPML4E(la)  (((uintptr_t) (la)) >> PML4SHIFT)
 
-<<<<<<< HEAD
-#define PML4(la)  ((((uintptr_t) (la)) >> PML4SHIFT) & 0x1FF) // PML4SHIFT == 39 .... 0X1FF == 1111 1111
-=======
 #define PML4(la)  ((((uintptr_t) (la)) >> PML4SHIFT) & 0x1FF)
->>>>>>> main
 
 // page table index
 #define PTX(la)		((((uintptr_t) (la)) >> PTXSHIFT) & 0x1FF)
@@ -115,11 +111,7 @@
 #define CR4_TSD		0x00000004	// Time Stamp Disable
 #define CR4_PVI		0x00000002	// Protected-Mode Virtual Interrupts
 #define CR4_VME		0x00000001	// V86 Mode Extensions
-<<<<<<< HEAD
-#define CR4_VMXE	0x00002000	// VMX
-=======
 #define CR4_VMXE	0x00002000	// VMX 
->>>>>>> main
 
 // x86_64 related flags
 #define CR4_PAE		0x00000020
@@ -216,11 +208,7 @@ struct SystemSegdesc64{
 	unsigned sd_rsv1 : 2;       // Reserved
 	unsigned sd_g : 1;          // Granularity: limit scaled by 4K when set
 	unsigned sd_base_31_24 : 8; // High bits of segment base address
-<<<<<<< HEAD
-    uint32_t sd_base_63_32;
-=======
     uint32_t sd_base_63_32;  
->>>>>>> main
     unsigned sd_res1 : 8;
     unsigned sd_clear : 8;
     unsigned sd_res2 : 16;
@@ -307,13 +295,8 @@ struct Gatedesc {
 	unsigned gd_dpl : 2;         // descriptor(meaning new) privilege level
 	unsigned gd_p : 1;           // Present
 	unsigned gd_off_31_16 : 16;  // high bits of offset in segment
-<<<<<<< HEAD
-    uint32_t gd_off_32_63;
-    uint32_t gd_rsv2;
-=======
     uint32_t gd_off_32_63;       
     uint32_t gd_rsv2;                   
->>>>>>> main
 };
 
 #define SETTSS(desc,type,base,lim,dpl)   \
