@@ -186,7 +186,6 @@ env_setup_vm(struct Env *e)
 	//    - The functions in kern/pmap.h are handy.
 
 	// LAB 3: Your code here.
-
 	// UVPT maps the env's own page table read-only.
 	// Permissions: kernel R, user R
 	e->env_pml4e[PML4(UVPT)] = e->env_cr3 | PTE_P | PTE_U;
@@ -489,4 +488,3 @@ env_run(struct Env *e)
 
 	panic("env_run not yet implemented");
 }
-
