@@ -561,5 +561,5 @@ env_run(struct Env *e)
   lcr3(curenv->env_cr3);
   env_pop_tf(&(curenv->env_tf));
 
-	panic("env_run not yet implemented");
+	//panic("env_run not yet implemented");
 }

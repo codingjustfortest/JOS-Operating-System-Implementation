@@ -218,13 +218,13 @@ boot_alloc(uint32_t n)
 	//
 	// LAB 2: Your code here.
 
-	if((uint64_t)(nextfree + n) > (npages * PGSIZE + KERNBASE)){
-		panic("out of memory in boot_alloc");
-	}
-	result = nextfree;
-	if(n != 0)
-		nextfree = ROUNDUP(nextfree + n, PGSIZE);
-	return result;
+		if((uint64_t)(nextfree + n) > (npages * PGSIZE + KERNBASE)){
+			panic("out of memory in boot_alloc");
+		}
+		result = nextfree;
+		if(n != 0)
+			nextfree = ROUNDUP(nextfree + n, PGSIZE);
+		return result;
 }
 
 // Set up a four-level page table:
@@ -261,9 +261,9 @@ x64_vm_init(void)
 	// array.  'npages' is the number of physical pages in memory.
 	// Your code goes here:
 
-	n = ROUNDUP(npages * sizeof(struct PageInfo), PGSIZE);
-	pages = boot_alloc(n);
-	//memset(pages, 0, n);
+		n = ROUNDUP(npages * sizeof(struct PageInfo), PGSIZE);
+		pages = boot_alloc(n);
+		//memset(pages, 0, n);
 
 	//////////////////////////////////////////////////////////////////////
 	// Make 'envs' point to an array of size 'NENV' of 'struct Env'.
@@ -324,7 +324,7 @@ x64_vm_init(void)
 	// Permissions: kernel RW, user NONE
 	// Your code goes here:
 
-	boot_map_region(pml4e, KERNBASE, npages * PGSIZE, (physaddr_t)0x0, PTE_W);
+	boot_map_region(pml4e, KERNBASE, npages * PGSIZE, (physaddr_t)0x0, PTE_W);;
 
 	// Check that the initial page directory has been set up correctly.
 	check_page_free_list(1);
@@ -500,7 +500,7 @@ pml4e_walk(pml4e_t *pml4e, const void *va, int create)
  	struct PageInfo *page = NULL;
  	pml4e_t *current_pml4e = &pml4e[PML4(va)];
 
- 	if(create && !*current_pml4e) {
+ 	if(create && !(*current_pml4e & PTE_P)) {
  		page = page_alloc(ALLOC_ZERO);
  		if (!page)
 			return NULL;
@@ -508,7 +508,7 @@ pml4e_walk(pml4e_t *pml4e, const void *va, int create)
 		page->pp_ref++;
 
 
-		*current_pml4e = (pml4e_t) (page2pa(page) & ~0xFFF) | PTE_P | PTE_W | PTE_U;
+		*current_pml4e = (pml4e_t) page2pa(page)| PTE_P | PTE_W | PTE_U;
 	}
 
 	pdpe = (pdpe_t *) KADDR(PTE_ADDR(*current_pml4e));
@@ -516,10 +516,8 @@ pml4e_walk(pml4e_t *pml4e, const void *va, int create)
 	pte_t *pte = pdpe_walk(pdpe, va, create);
 
 	if (!pte && page) {
-
-		page_decref(page);
-
 		*current_pml4e = 0x0;
+		page_decref(page);
 	}
 
 	return pte;
@@ -536,12 +534,12 @@ pdpe_walk(pdpe_t *pdpe,const void *va,int create){
 		struct PageInfo *page = NULL;
 		pdpe_t *current_pdpe = &pdpe[PDPE(va)];
 
-		if(create && !*current_pdpe) {
+		if(create && !(*current_pdpe & PTE_P)) {
 			page = page_alloc(ALLOC_ZERO);
 			if (!page)
 				return NULL;
 			page->pp_ref++;
-			*current_pdpe = (pdpe_t) (page2pa(page) & ~0xFFF) | PTE_P | PTE_W;
+			*current_pdpe = (pdpe_t) page2pa(page) | PTE_P | PTE_W | PTE_U;
 		}
 
 		pde = (pde_t *) KADDR(PTE_ADDR(*current_pdpe));
@@ -549,8 +547,8 @@ pdpe_walk(pdpe_t *pdpe,const void *va,int create){
 		pte_t *pte = pgdir_walk(pde, va, create);
 
 		if (!pte && page) {
-			page_decref(page);
 			*current_pdpe = 0x0;
+			page_decref(page);
 		}
 
 		return pte;
@@ -570,13 +568,13 @@ pgdir_walk(pde_t *pgdir, const void *va, int create)
 	pde_t *current_pde = &pgdir[PDX(va)];
 	pte_t *pte;
 
-	if(create && !*current_pde) {
+	if(create && !(*current_pde & PTE_P)) {
 		struct PageInfo *page = page_alloc(ALLOC_ZERO);
 		if (!page)
 			return NULL;
 
 		page->pp_ref++;
-		*current_pde = (pde_t) (page2pa(page) & ~0xFFF) | PTE_P | PTE_W;
+		*current_pde = (pde_t) page2pa(page) | PTE_P | PTE_W | PTE_U;
 	}
 
 	pte = (pte_t *) KADDR(PTE_ADDR(*current_pde));
@@ -647,7 +645,7 @@ page_insert(pml4e_t *pml4e, struct PageInfo *pp, void *va, int perm)
 		page_remove(pml4e, va);
 
 	pp->pp_ref++;
-	*pte = (page2pa(pp) & ~0xFFF) | perm | PTE_P;
+	*pte = page2pa(pp) | perm | PTE_P;
 
 	return 0;
 }
@@ -745,8 +743,18 @@ int
 user_mem_check(struct Env *env, const void *va, size_t len, int perm)
 {
 	// LAB 3: Your code here.
-	return 0;
+	uint64_t end = ROUNDUP((uint64_t)va+len,PGSIZE),start = ROUNDDOWN((uint64_t)va, PGSIZE);
 
+	for (; start < end; start += PGSIZE)
+	{
+		pte_t *pte = pml4e_walk(env->env_pml4e, (const void *)start, false);
+		if (start >= ULIM || pte == NULL || ((*pte & perm) != perm) || ((*pte & PTE_P) == 0))
+		{
+			user_mem_check_addr = start < (uintptr_t)va ? (uintptr_t)va : start;
+			return -E_FAULT;
+		}
+	}
+	return 0;
 }
 
 //
