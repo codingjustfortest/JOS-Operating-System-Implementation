@@ -548,8 +548,8 @@ env_run(struct Env *e)
 
 	// LAB 3: Your code here.
 
-	if (e->env_status != ENV_RUNNABLE)
-        panic("the env could not run");
+	//if (e->env_status != ENV_RUNNABLE)
+        //panic("the env could not run");
 
   if (curenv && curenv->env_status == ENV_RUNNING)
       curenv->env_status = ENV_RUNNABLE;
