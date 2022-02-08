@@ -7,7 +7,7 @@
 
 OBJDIRS += kern
 
-KERN_LDFLAGS := $(LDFLAGS) -T kern/kernel.ld 
+KERN_LDFLAGS := $(LDFLAGS) -T kern/kernel.ld
 
 KERN_LDFLAGS += -nostdlib --no-gc-sections --print-gc-sections -Map=vivek.map
 
