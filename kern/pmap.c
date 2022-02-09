@@ -786,7 +786,15 @@ mmio_map_region(physaddr_t pa, size_t size)
 	// Hint: The staff solution uses boot_map_region.
 	//
 	// Your code here:
-	panic("mmio_map_region not implemented");
+	uint64_t s_size = (size_t)ROUNDUP(pa + size, PGSIZE);
+	pa = (physaddr_t)ROUNDDOWN(pa, PGSIZE);
+	s_size = s_size - pa;
+	if(base + s_size >= MMIOLIM)
+		panic("cant assign memory to mmio\n");
+	boot_map_region(boot_pml4e, base, s_size, pa, PTE_PCD | PTE_PWT | PTE_W);
+	base += s_size;
+	return (void *)(base - s_size);
+	//panic("mmio_map_region not implemented");
 }
 
 static uintptr_t user_mem_check_addr;
