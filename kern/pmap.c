@@ -417,7 +417,7 @@ page_init(void)
 	int num_iohole = 96;
 
 	pages[0].pp_ref = 1;
-	for(i = 1; i < npages_basemem; i++)
+	for(i = 1; i < MPENTRY_PADDR/PGSIZE; i++)
 	{
 	  pages[i].pp_ref = 0;
 	  pages[i].pp_link = page_free_list;
