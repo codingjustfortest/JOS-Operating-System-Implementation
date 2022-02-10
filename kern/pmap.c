@@ -291,7 +291,7 @@ x64_vm_init(void)
 	//    - pages itself -- kernel RW, user NONE
 	// Your code goes here:
 	n = npages*sizeof(struct PageInfo);
-	boot_map_region(pml4e, UPAGES, n, PADDR(pages), PTE_U);
+	boot_map_region(boot_pml4e, UPAGES, n, PADDR(pages), PTE_U);
 
 	boot_map_region(pml4e, (uintptr_t) pages, PGSIZE, PADDR(pages), PTE_W);
 
@@ -368,6 +368,14 @@ mem_init_mp(void)
 	//     Permissions: kernel RW, user NONE
 	//
 	// LAB 4: Your code here:
+	int cpu_num;
+	uintptr_t top = KSTACKTOP;
+	for (cpu_num = 0; cpu_num < NCPU; ++cpu_num)
+	{
+		top -= KSTKSIZE;
+		boot_map_region(boot_pml4e, top, KSTKSIZE, PADDR(percpu_kstacks[cpu_num]), PTE_W);
+		top -= KSTKGAP;
+	}
 
 }
 
@@ -1034,10 +1042,10 @@ check_boot_pml4e(pml4e_t *pml4e)
 		assert(check_va2pa(pml4e, KERNBASE + i) == i);
 
 	// check kernel stack
-	for (i = 0; i < KSTKSIZE; i += PGSIZE) {
-		assert(check_va2pa(pml4e, KSTACKTOP - KSTKSIZE + i) == PADDR(bootstack) + i);
-	}
-	assert(check_va2pa(pml4e, KSTACKTOP - KSTKSIZE - 1 )  == ~0);
+	//for (i = 0; i < KSTKSIZE; i += PGSIZE) {
+		//assert(check_va2pa(pml4e, KSTACKTOP - KSTKSIZE + i) == PADDR(bootstack) + i);
+	//}
+	//assert(check_va2pa(pml4e, KSTACKTOP - KSTKSIZE - 1 )  == ~0);
 	// (updated in lab 4 to check per-CPU kernel stacks)
 	for (n = 0; n < NCPU; n++) {
 		uint64_t base = KSTACKTOP - (KSTKSIZE + KSTKGAP) * (n + 1);
