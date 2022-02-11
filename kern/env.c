@@ -572,8 +572,8 @@ env_run(struct Env *e)
 
 	// LAB 3: Your code here.
 
-	//if (e->env_status != ENV_RUNNABLE)
-        //panic("the env could not run");
+	//f (e != curenv && e->env_status != ENV_RUNNABLE)
+			//panic("the env could not run");
 
   if (curenv && curenv->env_status == ENV_RUNNING)
       curenv->env_status = ENV_RUNNABLE;
@@ -581,6 +581,8 @@ env_run(struct Env *e)
   curenv = e;
   curenv->env_status = ENV_RUNNING;
   curenv->env_runs++;
+
+	unlock_kernel();
 
   lcr3(curenv->env_cr3);
   env_pop_tf(&(curenv->env_tf));
