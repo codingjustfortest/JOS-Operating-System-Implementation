@@ -12,6 +12,7 @@
 #include <kern/dwarf.h>
 #include <kern/kdebug.h>
 #include <kern/dwarf_api.h>
+#include <kern/trap.h>
 
 #define CMDBUF_SIZE	80	// enough for one VGA text line
 
@@ -61,39 +62,6 @@ int
 mon_backtrace(int argc, char **argv, struct Trapframe *tf)
 {
 	// Your code here.
-	uint64_t rbp = read_rbp();
-	uint64_t rip = 0;
-	read_rip(rip);
-	
-	struct Ripdebuginfo information;
-	
-	int i;
-	cprintf("\n\n");
-	cprintf("Stack backtrace:\n");
-	
-	do
-	{
-		i = debuginfo_rip(rip, &information);
-		int j = 1;
-		cprintf("rbp %016x  rip %016x\n", rbp, rip);
-		if(!i)
-		{
-			cprintf("%s:%d: %s+%016x  args:%d", information.rip_file, information.rip_line, information.rip_fn_name, rip-information.rip_fn_addr, information.rip_fn_narg);
-			if(j==1)
-				cprintf("  %016x", *(uint32_t *)(rbp-4));
-			for(j=2;j<=information.rip_fn_narg;j++)
-			{
-				cprintf("  %016x", *(uint32_t *)(rbp+8));
-			}
-			cprintf("\n");
-		}
-		rip = *(uint64_t *)(rbp + 8);
-		rbp = *(uint64_t *)(rbp);
-
-	}while(rbp != 0);
-
-	cprintf("\n\n");
-
 	return 0;
 }
 
@@ -151,6 +119,8 @@ monitor(struct Trapframe *tf)
 	cprintf("Welcome to the JOS kernel monitor!\n");
 	cprintf("Type 'help' for a list of commands.\n");
 
+	if (tf != NULL)
+		print_trapframe(tf);
 
 	while (1) {
 		buf = readline("K> ");
