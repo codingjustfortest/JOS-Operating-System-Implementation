@@ -683,10 +683,10 @@ page_insert(pml4e_t *pml4e, struct PageInfo *pp, void *va, int perm)
 	pte_t *pte = pml4e_walk(pml4e, va, true);
 	if (!pte)
 		return -E_NO_MEM;
-	if (*pte & PTE_P)
-		page_remove(pml4e, va);
 
 	pp->pp_ref++;
+	if (*pte & PTE_P)
+		page_remove(pml4e, va);
 	*pte = page2pa(pp) | perm | PTE_P;
 
 	return 0;
