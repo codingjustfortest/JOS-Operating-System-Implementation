@@ -61,7 +61,17 @@ alloc_block(void)
 	// super->s_nblocks blocks in the disk altogether.
 
 	// LAB 5: Your code here.
-	panic("alloc_block not implemented");
+	int i;
+
+	 for (i = 0; i < super->s_nblocks; i++) {
+			 if (block_is_free(i)) {
+					 bitmap[i / 32] &= ~(1 << (i % 32));
+					 flush_block(&bitmap[i / 32]);
+					 return i;
+			 }
+	 }
+
+	// panic("alloc_block not implemented");
 	return -E_NO_DISK;
 }
 
@@ -122,7 +132,7 @@ fs_init(void)
 // When 'alloc' is set, this function will allocate an indirect block
 // if necessary.
 //
-//  Note, for the read-only file system (lab 5 without the challenge), 
+//  Note, for the read-only file system (lab 5 without the challenge),
 //        alloc will always be false.
 //
 // Returns:
