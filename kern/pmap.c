@@ -265,7 +265,7 @@ x64_vm_init(void)
 
 		n = ROUNDUP(npages * sizeof(struct PageInfo), PGSIZE);
 		pages = boot_alloc(n);
-		//memset(pages, 0, n);
+		memset(pages, 0, n);
 
 	//////////////////////////////////////////////////////////////////////
 	// Make 'envs' point to an array of size 'NENV' of 'struct Env'.
@@ -419,12 +419,12 @@ page_init(void)
 	// is constructed
 	// NB: Remember to mark the memory used for initial boot page table i.e (va>=BOOT_PAGE_TABLE_START && va < BOOT_PAGE_TABLE_END) as in-use (not free)
 	size_t i;
-	page_free_list = NULL;
+	// page_free_list = NULL;
 
 	int num_alloc = ((uint64_t)boot_alloc(0) - KERNBASE) / PGSIZE;
 	int num_iohole = 96;
 
-	pages[0].pp_ref = 1;
+	// pages[0].pp_ref = 1;
 	for(i = 1; i < MPENTRY_PADDR/PGSIZE; i++)
 	{
 	  pages[i].pp_ref = 0;
